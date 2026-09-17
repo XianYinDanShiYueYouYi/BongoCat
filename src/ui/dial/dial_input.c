@@ -17,7 +17,15 @@ static void activate(Dial *d) {
     if (d->active < 0) return;
     char text[32];
     DialItem item = d->child < 0 ? d->items[d->active] : dial_child_item(d,d->child,text,sizeof(text));
-    if (item.children) { dial_select(d,d->active,0); return; }
+    if (item.children) {
+        /* Enter the submenu without preselecting its first item. Preselecting
+           immediately previews it, so the value jumped (e.g. scale to 50%) the
+           moment the submenu opened instead of waiting for a deliberate pick. */
+        d->child_focus = true;
+        d->child = -1;
+        d->dirty = true;
+        return;
+    }
     if (item.command != BONGO_CAT_MENU_NONE) { d->result = item.command; d->done = true; }
 }
 
