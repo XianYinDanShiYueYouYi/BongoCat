@@ -102,6 +102,17 @@ void bongo_cat_window_set_visible(BongoCatApp *app, bool visible) {
        submitted. The render loop will reveal it next to that presentation. */
     bongo_cat_platform_set_visible(&app->platform,
         !app->startup_visibility_pending);
+#if defined(__linux__)
+    /* Mapping is asynchronous, and XWayland lets the compositor park a newly
+       mapped surface at its default spot (top-left) instead of honoring the
+       position requested before the map. Re-apply the remembered position once
+       the surface exists and sync so the geometry is final before the frame. */
+    if (app->session.window.position_known) {
+        SDL_SetWindowPosition(app->window, app->session.window.x,
+            app->session.window.y);
+        SDL_SyncWindow(app->window);
+    }
+#endif
     bongo_cat_window_mark_hit_dirty(app);
     app->dirty = true;
 }

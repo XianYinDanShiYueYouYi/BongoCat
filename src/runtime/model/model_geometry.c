@@ -55,7 +55,13 @@ bool bongo_cat_model_apply_aspect(BongoCatApp *app,
     bool restored_frame = !replacing_model &&
         SDL_abs(width - next_width) <= 1 && SDL_abs(height - next_height) <= 1;
     int next_x = x, next_y = y;
-    if (anchor && anchor->valid && !restored_frame) {
+    /* On first load the surface is still hidden, so the position SDL reports
+       for it is unreliable (XWayland often answers 0,0). Trust the persisted
+       spot instead of the anchor, otherwise the pet reopens in a corner. */
+    if (!replacing_model && app->session.window.position_known) {
+        next_x = app->session.window.x;
+        next_y = app->session.window.y;
+    } else if (anchor && anchor->valid && !restored_frame) {
         next_x = anchor->x - left - content_width / 2;
         next_y = anchor->y - top - content_height / 2;
     }

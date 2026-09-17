@@ -177,6 +177,19 @@ bool bongo_cat_window_event(BongoCatApp *app, const SDL_Event *event) {
            Explorer/display refresh. Repaint even when the model is idle so
            the restored alpha surface is submitted immediately. */
         app->dirty = true;
+#if defined(__linux__)
+        /* XWayland parks a freshly mapped surface at the compositor's own spot
+           and ignores the position requested before the map. Re-assert the
+           remembered position now that the surface is really on screen. */
+        if (app->session.window.position_known) {
+            int current_x = 0, current_y = 0;
+            if (SDL_GetWindowPosition(app->window, &current_x, &current_y) &&
+                (current_x != app->session.window.x ||
+                 current_y != app->session.window.y))
+                SDL_SetWindowPosition(app->window, app->session.window.x,
+                    app->session.window.y);
+        }
+#endif
     }
     if (event->type == SDL_EVENT_WINDOW_FOCUS_GAINED ||
         event->type == SDL_EVENT_WINDOW_FOCUS_LOST) {
