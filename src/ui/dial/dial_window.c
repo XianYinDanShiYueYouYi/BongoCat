@@ -135,6 +135,11 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
     dial_items(d);
     bool ready = create(d);
     if (!ready) SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,"Radial menu initialization failed: %s",SDL_GetError());
+    /* The pet keeps _NET_WM_STATE_ABOVE while the menu is an independent
+       always-on-top window. On XWayland both live in the same ABOVE layer and
+       a focus change can raise the pet back over the menu, so suspend the
+       pet's always-on-top state while the menu is open. */
+    if (ready) bongo_cat_platform_set_always_on_top(platform, false);
     while (ready && !d->done) {
         uint64_t start = SDL_GetTicks();
         SDL_PumpEvents();
@@ -170,6 +175,8 @@ BongoCatMenuAction bongo_cat_platform_context_menu(BongoCatPlatform *platform,
         uint64_t elapsed = SDL_GetTicks()-start;
         if (elapsed < 16) SDL_Delay((Uint32)(16-elapsed));
     }
+    /* Restore the pet's always-on-top preference now that the menu is gone. */
+    bongo_cat_platform_set_always_on_top(platform, labels->always_on_top_checked);
     if (!d->context || (SDL_GetWindowFromID(d->window_id) &&
         SDL_GL_MakeCurrent(d->window,d->context))) dial_paint_free(d);
     else {
