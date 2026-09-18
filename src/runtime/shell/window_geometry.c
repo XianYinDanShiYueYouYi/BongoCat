@@ -106,9 +106,18 @@ bool bongo_cat_window_apply_geometry(BongoCatApp *app, int x, int y,
 
 bool bongo_cat_window_set_scale(BongoCatApp *app, float scale) {
     if (!app || !app->window) return false;
-    int x, y, width, height;
-    if (!SDL_GetWindowPosition(app->window, &x, &y) ||
-        !SDL_GetWindowSize(app->window, &width, &height)) return false;
+    int x, y;
+    if (!SDL_GetWindowPosition(app->window, &x, &y)) return false;
+    /* The scale factor is anchored to the session geometry, so derive the new
+       size from that recorded geometry rather than the live window size. The
+       compositor can report a size that differs from what was requested, and
+       repeated scale changes (e.g. sweeping the radial menu) would then drift
+       the window smaller each pass instead of staying exact. */
+    int width = app->session.window.width;
+    int height = app->session.window.height;
+    if (width <= 0 || height <= 0) {
+        if (!SDL_GetWindowSize(app->window, &width, &height)) return false;
+    }
     float actual;
     int next_width, next_height;
     if (!bongo_cat_window_scaled_size(width, height,
