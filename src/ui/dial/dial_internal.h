@@ -13,6 +13,14 @@
 #define DIAL_PATH_POINTS 160
 #define DIAL_CENTER_SEGMENTS 64
 #define DIAL_CENTER_RINGS 16
+/* Submenu items reveal one by one; the returned value is the item's opacity.
+   Hit-testing below the visibility threshold is suppressed so a quick pointer
+   sweep cannot preview a value the user has not seen yet. */
+static inline float dial_reveal(uint64_t now, uint64_t started, int index) {
+    float elapsed = (float)(now - started) - (float)index * DIAL_REVEAL_DELAY_MS;
+    float t = fmaxf(0.0f, fminf(1.0f, elapsed / DIAL_REVEAL_DURATION_MS));
+    return 1.0f - powf(1.0f - t, 3.0f);
+}
 typedef struct DialPoint { float x, y; } DialPoint;
 typedef struct DialPath {
     DialPoint points[DIAL_PATH_POINTS];

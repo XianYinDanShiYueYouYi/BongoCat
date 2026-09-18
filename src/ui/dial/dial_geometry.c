@@ -110,7 +110,13 @@ void dial_hit(Dial *d, float x, float y, int *root, int *child) {
     float radius = hypotf(x, y), angle = atan2f(y, x);
     *root = -1; *child = -1;
     if (d->active >= 0 && radius >= 190 && radius <= 277) {
+        uint64_t now = SDL_GetTicks();
         for (int i = 0; i < dial_child_count(d); ++i) {
+            /* Submenu items reveal one by one; an item that is still mostly
+               transparent is not yet visible, so it must not be hittable.
+               Otherwise a fast pointer sweep could preview a scale value the
+               user has not seen yet. */
+            if (dial_reveal(now, d->changed_at, i) < 0.5f) continue;
             if (fabsf(angle_distance(angle, dial_child_angle(d, i))) <
                 dial_child_step(d) / 2) {
                 *root = d->active; *child = i; return;

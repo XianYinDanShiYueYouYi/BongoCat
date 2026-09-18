@@ -1,12 +1,6 @@
 #include "dial_internal.h"
 #include <stdio.h>
 
-static float reveal(uint64_t now, uint64_t started, int index) {
-    float elapsed = (float)(now - started) - index * DIAL_REVEAL_DELAY_MS;
-    float t = fmaxf(0, fminf(1, elapsed / DIAL_REVEAL_DURATION_MS));
-    return 1 - powf(1 - t, 3);
-}
-
 static uint32_t alpha(uint32_t color, float opacity) {
     return (color&0xffffff) | ((uint32_t)((float)(color>>24)*opacity)<<24);
 }
@@ -62,7 +56,7 @@ static void root(Dial *d, int index, uint64_t now) {
     DialItem item = d->items[index];
     float angle = -DIAL_PI / 2 + index * 2 * DIAL_PI / d->count;
     float x = 132 * cosf(angle), y = 132 * sinf(angle);
-    float ease = reveal(now, d->opened_at, index);
+    float ease = dial_reveal(now, d->opened_at, index);
     /* Keep the first sector hittable on transparent native windows. */
     if (index == 0) ease = fmaxf(.15f, ease);
     float lift = d->lift[index], zoom = .72f + .28f * ease + .055f * lift;
@@ -145,7 +139,7 @@ static void center(Dial *d) {
 static void children(Dial *d, uint64_t now) {
     for (int i = 0; i < dial_child_count(d); ++i) {
         /* Child indices increase with screen angle, so this reveals clockwise. */
-        float ease = reveal(now, d->changed_at, i);
+        float ease = dial_reveal(now, d->changed_at, i);
         float angle = dial_child_angle(d, i), x = 230 * cosf(angle), y = 230 * sinf(angle);
         bool hover = i == d->child;
         float zoom = .72f + .28f * ease + (hover ? .06f : 0);
